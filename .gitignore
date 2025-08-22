@@ -62,3 +62,35 @@ TestResult*/
 
 # Others
 launchSettings.json
+
+
+### Node / React / Vite ###
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env files (keep template if needed)
+.env
+.env.*.local
+
+### System ###
+.DS_Store
+Thumbs.db
+
+# Front (React/Vite)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+*.local
+
+# Env files
+.env
+.env.*.local
