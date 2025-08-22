@@ -13,3 +13,52 @@ terraform.rc
 *.auto.tfvars
 # Garder le lock (à versionner)
 !.terraform.lock.hcl
+
+# Build results
+bin/
+obj/
+out/
+
+# VSCode / Rider
+.vscode/
+.idea/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Secrets
+secrets.json
+*.secret
+*.secrets.json
+
+# Entity Framework
+Migrations/*Designer.cs
+Migrations/*Snapshot.cs
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# dotnet tools
+*.dbmdl
+*.bak
+*.sql
+
+# Packages
+*.nupkg
+*.snupkg
+packages/
+
+# Test results
+TestResult*/
+*.coverage
+*.coveragexml
+
+# Others
+launchSettings.json
