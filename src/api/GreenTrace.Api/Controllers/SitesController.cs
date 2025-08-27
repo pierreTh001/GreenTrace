@@ -1,5 +1,7 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Sites;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,13 +19,13 @@ public class SitesController : ControllerBase
     public async Task<IActionResult> Get(Guid companyId)
     {
         var sites = await _sites.GetByCompanyAsync(companyId);
-        return Ok(sites);
+        return Ok(sites.Select(s => s.ToViewModel()));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Guid companyId, CompanySite site)
+    public async Task<IActionResult> Create(Guid companyId, CreateSiteViewModel site)
     {
-        var created = await _sites.CreateAsync(companyId, site);
-        return Ok(created);
+        var created = await _sites.CreateAsync(companyId, site.ToEntity(companyId));
+        return Ok(created.ToViewModel());
     }
 }

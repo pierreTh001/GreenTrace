@@ -1,5 +1,7 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Reports;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +19,7 @@ public class ReportsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var result = await _reports.GetAllAsync();
-        return Ok(result);
+        return Ok(result.Select(r => r.ToViewModel()));
     }
 
     [HttpGet("{id}")]
@@ -25,14 +27,14 @@ public class ReportsController : ControllerBase
     {
         var report = await _reports.GetByIdAsync(id);
         if (report == null) return NotFound();
-        return Ok(report);
+        return Ok(report.ToViewModel());
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Report report)
+    public async Task<IActionResult> Create(CreateReportViewModel report)
     {
-        var created = await _reports.CreateAsync(report);
-        return Ok(created);
+        var created = await _reports.CreateAsync(report.ToEntity());
+        return Ok(created.ToViewModel());
     }
 
     [HttpPost("{id}/lock")]

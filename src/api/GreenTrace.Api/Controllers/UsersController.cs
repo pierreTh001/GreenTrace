@@ -1,5 +1,6 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -22,7 +23,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var users = await _users.GetAllAsync();
-        var result = users.Select(u => new { u.Id, u.Email, u.FirstName, u.LastName });
+        var result = users.Select(u => u.ToViewModel());
         return Ok(result);
     }
 
@@ -32,23 +33,23 @@ public class UsersController : ControllerBase
     {
         var user = await _users.GetByIdAsync(id);
         if (user == null) return NotFound();
-        return Ok(new { user.Id, user.Email, user.FirstName, user.LastName });
+        return Ok(user.ToViewModel());
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create(CreateUserRequest req)
+    public async Task<IActionResult> Create(CreateUserViewModel req)
     {
         var result = await _users.RegisterAsync(req.Email, req.Password, req.FirstName, req.LastName);
-        return Ok(new { result.user.Id, result.user.Email, result.user.FirstName, result.user.LastName });
+        return Ok(result.user.ToViewModel());
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Update(Guid id, UpdateUserRequest req)
+    public async Task<IActionResult> Update(Guid id, UpdateUserViewModel req)
     {
         var user = await _users.UpdateAsync(id, req.FirstName, req.LastName);
-        return Ok(new { user.Id, user.Email, user.FirstName, user.LastName });
+        return Ok(user.ToViewModel());
     }
 
     [HttpDelete("{id}")]
@@ -74,7 +75,4 @@ public class UsersController : ControllerBase
         await _users.UpdatePreferencesAsync(id, preferences);
         return Ok();
     }
-
-    public record CreateUserRequest(string Email, string Password, string FirstName, string LastName);
-    public record UpdateUserRequest(string FirstName, string LastName);
 }

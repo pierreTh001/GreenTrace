@@ -1,5 +1,7 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Suppliers;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,13 +19,13 @@ public class SuppliersController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var result = await _suppliers.GetAllAsync();
-        return Ok(result);
+        return Ok(result.Select(s => s.ToViewModel()));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Supplier supplier)
+    public async Task<IActionResult> Create(CreateSupplierViewModel supplier)
     {
-        var created = await _suppliers.CreateAsync(supplier);
-        return Ok(created);
+        var created = await _suppliers.CreateAsync(supplier.ToEntity());
+        return Ok(created.ToViewModel());
     }
 }

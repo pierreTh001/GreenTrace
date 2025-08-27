@@ -1,4 +1,5 @@
-using GreenTrace.Api.Infrastructure.Entities;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.ActivityData;
 using GreenTrace.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,9 +15,9 @@ public class ActivityDataController : ControllerBase
     public ActivityDataController(IActivityDataService activity) => _activity = activity;
 
     [HttpPost]
-    public async Task<IActionResult> Ingest(ActivityData data)
+    public async Task<IActionResult> Ingest(ActivityDataViewModel data)
     {
-        await _activity.IngestAsync(data);
+        await _activity.IngestAsync(data.ToEntity());
         return Ok();
     }
 }
