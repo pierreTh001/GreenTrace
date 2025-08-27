@@ -1,5 +1,8 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Companies;
+using GreenTrace.Api.Infrastructure.Entities;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +19,7 @@ public class CompaniesController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var result = await _companies.GetAllAsync();
-        return Ok(result);
+        return Ok(result.Select(c => c.ToViewModel()));
     }
 
     [HttpGet("{id}")]
@@ -24,23 +27,25 @@ public class CompaniesController : ControllerBase
     {
         var company = await _companies.GetByIdAsync(id);
         if (company == null) return NotFound();
-        return Ok(company);
+        return Ok(company.ToViewModel());
     }
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create(Company company)
+    public async Task<IActionResult> Create(CreateCompanyViewModel company)
     {
-        var created = await _companies.CreateAsync(company);
-        return Ok(created);
+        var created = await _companies.CreateAsync(company.ToEntity());
+        return Ok(created.ToViewModel());
     }
 
     [HttpPut("{id}")]
     [Authorize]
-    public async Task<IActionResult> Update(Guid id, Company company)
+    public async Task<IActionResult> Update(Guid id, UpdateCompanyViewModel company)
     {
-        var updated = await _companies.UpdateAsync(id, company);
-        return Ok(updated);
+        var entity = new Company();
+        company.MapTo(entity);
+        var updated = await _companies.UpdateAsync(id, entity);
+        return Ok(updated.ToViewModel());
     }
 
     [HttpDelete("{id}")]

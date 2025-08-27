@@ -1,5 +1,7 @@
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Energy;
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,13 +19,13 @@ public class EnergyController : ControllerBase
     public async Task<IActionResult> Get(Guid companyId)
     {
         var entries = await _energy.GetEntriesAsync(companyId);
-        return Ok(entries);
+        return Ok(entries.Select(e => e.ToViewModel()));
     }
 
     [HttpPost]
-    public async Task<IActionResult> Add(Guid companyId, EnergyEntry entry)
+    public async Task<IActionResult> Add(Guid companyId, CreateEnergyEntryViewModel entry)
     {
-        var created = await _energy.AddEntryAsync(companyId, entry);
-        return Ok(created);
+        var created = await _energy.AddEntryAsync(companyId, entry.ToEntity(companyId));
+        return Ok(created.ToViewModel());
     }
 }
