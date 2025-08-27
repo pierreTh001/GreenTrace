@@ -1,11 +1,8 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
+using GreenTrace.Api.Mappers;
+using GreenTrace.Api.ViewModels.Users;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using System.Linq;
 
 namespace GreenTrace.Api.Controllers;
@@ -15,50 +12,10 @@ namespace GreenTrace.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _users;
-    private readonly IConfiguration _config;
 
-    public UsersController(IUserService users, IConfiguration config)
+    public UsersController(IUserService users)
     {
         _users = users;
-        _config = config;
-    }
-
-    [HttpPost("register")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Register(RegisterRequest req)
-    {
-        try
-        {
-            var result = await _users.RegisterAsync(req.Email, req.Password, req.FirstName, req.LastName);
-            var token = GenerateToken(result.user, result.roles);
-            return Ok(new { token });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Login(LoginRequest req)
-    {
-        var result = await _users.LoginAsync(req.Email, req.Password);
-        if (result == null)
-        {
-            return Unauthorized();
-        }
-
-        var token = GenerateToken(result.Value.user, result.Value.roles);
-        return Ok(new { token });
-    }
-
-    [HttpPost("logout")]
-    [Authorize]
-    public IActionResult Logout()
-    {
-        // For JWT, logout is handled on the client side.
-        return Ok();
     }
 
     [HttpGet]
@@ -66,36 +23,56 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var users = await _users.GetAllAsync();
-        var result = users.Select(u => new { u.Id, u.Email, u.FirstName, u.LastName });
+        var result = users.Select(u => u.ToViewModel());
         return Ok(result);
     }
 
-    private string GenerateToken(User user, IEnumerable<string> roles)
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Get(Guid id)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-        foreach (var r in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, r));
-        }
-
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_config.GetValue<int>("Jwt:ExpiryMinutes")),
-            signingCredentials: creds);
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
+        var user = await _users.GetByIdAsync(id);
+        if (user == null) return NotFound();
+        return Ok(user.ToViewModel());
     }
 
-    public record RegisterRequest(string Email, string Password, string FirstName, string LastName);
-    public record LoginRequest(string Email, string Password);
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create(CreateUserViewModel req)
+    {
+        var result = await _users.RegisterAsync(req.Email, req.Password, req.FirstName, req.LastName);
+        return Ok(result.user.ToViewModel());
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(Guid id, UpdateUserViewModel req)
+    {
+        var user = await _users.UpdateAsync(id, req.FirstName, req.LastName);
+        return Ok(user.ToViewModel());
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        await _users.DeleteAsync(id);
+        return NoContent();
+    }
+
+    [HttpPost("{id}/activate")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Activate(Guid id)
+    {
+        await _users.ActivateAsync(id);
+        return Ok();
+    }
+
+    [HttpPut("{id}/preferences")]
+    [Authorize]
+    public async Task<IActionResult> UpdatePreferences(Guid id, object preferences)
+    {
+        await _users.UpdatePreferencesAsync(id, preferences);
+        return Ok();
+    }
 }
