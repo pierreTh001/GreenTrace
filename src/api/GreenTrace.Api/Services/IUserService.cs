@@ -7,4 +7,9 @@ public interface IUserService
     Task<(User user, IEnumerable<string> roles)> RegisterAsync(string email, string password, string firstName, string lastName);
     Task<(User user, IEnumerable<string> roles)?> LoginAsync(string email, string password);
     Task<IEnumerable<User>> GetAllAsync();
+    Task<User?> GetByIdAsync(Guid id);
+    Task<User> UpdateAsync(Guid id, string firstName, string lastName);
+    Task DeleteAsync(Guid id);
+    Task ActivateAsync(Guid id);
+    Task UpdatePreferencesAsync(Guid id, object preferences);
 }

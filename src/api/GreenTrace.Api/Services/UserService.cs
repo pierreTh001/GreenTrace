@@ -4,6 +4,7 @@ using GreenTrace.Api.Infrastructure;
 using GreenTrace.Api.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using System.Text.Json;
 
 public class UserService : IUserService
 {
@@ -70,6 +71,50 @@ public class UserService : IUserService
     public async Task<IEnumerable<User>> GetAllAsync()
     {
         return await _db.Users.ToListAsync();
+    }
+
+    public Task<User?> GetByIdAsync(Guid id)
+    {
+        return _db.Users.FindAsync(id).AsTask();
+    }
+
+    public async Task<User> UpdateAsync(Guid id, string firstName, string lastName)
+    {
+        var user = await _db.Users.FindAsync(id) ?? throw new KeyNotFoundException();
+        user.FirstName = firstName;
+        user.LastName = lastName;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+        return user;
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return;
+        _db.Users.Remove(user);
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task ActivateAsync(Guid id)
+    {
+        var user = await _db.Users.FindAsync(id) ?? throw new KeyNotFoundException();
+        user.IsActive = true;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task UpdatePreferencesAsync(Guid id, object preferences)
+    {
+        var user = await _db.Users.FindAsync(id) ?? throw new KeyNotFoundException();
+        var json = JsonSerializer.Serialize(preferences);
+        using var doc = JsonDocument.Parse(json);
+        if (doc.RootElement.TryGetProperty("preferredLocale", out var loc))
+        {
+            user.PreferredLocale = loc.GetString();
+        }
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
     }
 
     private async Task EnsureRoleExists(string code)
