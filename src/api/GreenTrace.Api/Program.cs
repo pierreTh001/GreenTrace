@@ -1,6 +1,10 @@
 using GreenTrace.Api.Domain;
 using GreenTrace.Api.Infrastructure;
+using GreenTrace.Api.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +18,25 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 // 3) Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Authentication & Authorization
+builder.Services.AddControllers();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // 4) Build (⚠️ c’est bien Build(), pas Create(...))
 var app = builder.Build();
@@ -29,7 +52,11 @@ if (app.Environment.IsDevelopment())
     db.Database.Migrate();
 }
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 // 6) Endpoints
+app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { ok = true, at = DateTime.UtcNow }));
 
 app.MapGet("/companies", async (AppDbContext db) =>
