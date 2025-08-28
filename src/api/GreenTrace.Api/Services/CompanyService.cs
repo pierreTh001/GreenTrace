@@ -29,6 +29,49 @@ public class CompanyService : ICompanyService
         return company;
     }
 
+    public async Task<Company> CreateForUserAsync(Guid ownerUserId, Company company)
+    {
+        var created = await CreateAsync(company);
+
+        // Ensure CompanyOwner role exists
+        var ownerRole = await _db.Roles.FirstOrDefaultAsync(r => r.Code == "CompanyOwner");
+        if (ownerRole == null)
+        {
+            ownerRole = new Role
+            {
+                Id = Guid.NewGuid(),
+                Code = "CompanyOwner",
+                Label = "Company Owner",
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                CreatedBy = ownerUserId,
+                UpdatedBy = ownerUserId
+            };
+            _db.Roles.Add(ownerRole);
+            await _db.SaveChangesAsync();
+        }
+
+        // Assign role to user for this company
+        var existing = await _db.UserCompanyRoles
+            .FirstOrDefaultAsync(u => u.UserId == ownerUserId && u.CompanyId == created.Id && u.RoleId == ownerRole.Id);
+        if (existing == null)
+        {
+            _db.UserCompanyRoles.Add(new UserCompanyRole
+            {
+                UserId = ownerUserId,
+                CompanyId = created.Id,
+                RoleId = ownerRole.Id,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                CreatedBy = ownerUserId,
+                UpdatedBy = ownerUserId
+            });
+            await _db.SaveChangesAsync();
+        }
+
+        return created;
+    }
+
     public async Task<Company> UpdateAsync(Guid id, Company company)
     {
         var existing = await _db.Companies.FindAsync(id) ?? throw new KeyNotFoundException();

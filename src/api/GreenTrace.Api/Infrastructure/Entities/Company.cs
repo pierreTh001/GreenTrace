@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class Company
 {
+    [Key]
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
     public string? LegalForm { get; set; }

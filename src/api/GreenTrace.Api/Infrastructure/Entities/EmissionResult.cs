@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class EmissionResult
 {
+    [Key]
     public Guid Id { get; set; }
     public Guid CompanyId { get; set; }
     public Guid? SiteId { get; set; }

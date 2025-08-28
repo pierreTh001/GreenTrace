@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class Kpi
 {
+    [Key]
     public Guid Id { get; set; }
     public string Code { get; set; } = null!;
     public string Label { get; set; } = null!;

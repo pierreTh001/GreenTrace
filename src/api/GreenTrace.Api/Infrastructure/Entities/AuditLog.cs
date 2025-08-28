@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class AuditLog
 {
+    [Key]
     public Guid Id { get; set; }
     public DateTimeOffset PerformedAt { get; set; }
     public Guid PerformedBy { get; set; }

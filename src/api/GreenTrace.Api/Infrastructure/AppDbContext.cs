@@ -36,6 +36,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<WasteEntry> WasteEntries => Set<WasteEntry>();
     public DbSet<WaterEntry> WaterEntries => Set<WaterEntry>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        // Global default for decimals
+        configurationBuilder.Properties<decimal>().HavePrecision(18, 6);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,5 +51,55 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserSystemRole>().HasKey(usr => new { usr.UserId, usr.RoleId });
         modelBuilder.Entity<CompanyRelationship>().HasKey(cr => new { cr.ParentCompanyId, cr.ChildCompanyId });
         modelBuilder.Entity<UserCompanyRole>().HasKey(ucr => new { ucr.UserId, ucr.CompanyId, ucr.RoleId });
+        modelBuilder.Entity<SubscriptionPlan>().HasIndex(p => p.Code).IsUnique();
+        modelBuilder.Entity<Subscription>().HasIndex(s => new { s.UserId, s.Status });
+
+        // Explicit decimal precision to avoid truncation warnings
+        modelBuilder.Entity<WaterEntry>()
+            .Property(w => w.VolumeM3)
+            .HasPrecision(18, 2);
+
+        // Monetary
+        modelBuilder.Entity<PurchasedGoodsLine>()
+            .Property(p => p.Amount)
+            .HasPrecision(18, 2);
+
+        // Lat/Long
+        modelBuilder.Entity<CompanySite>()
+            .Property(s => s.Latitude)
+            .HasPrecision(9, 6);
+        modelBuilder.Entity<CompanySite>()
+            .Property(s => s.Longitude)
+            .HasPrecision(9, 6);
+
+        // Percentages
+        modelBuilder.Entity<EnergyEntry>()
+            .Property(e => e.RenewableSharePct)
+            .HasPrecision(5, 2);
+        modelBuilder.Entity<CompanyRelationship>()
+            .Property(c => c.EquitySharePct)
+            .HasPrecision(5, 2);
+
+        // Emission factor high precision
+        modelBuilder.Entity<EmissionFactor>()
+            .Property(f => f.FactorCo2e)
+            .HasPrecision(18, 8);
+
+        // Distances / masses
+        modelBuilder.Entity<EnergyEntry>()
+            .Property(e => e.ConsumptionKwh)
+            .HasPrecision(18, 3);
+        modelBuilder.Entity<Shipment>()
+            .Property(s => s.DistanceTkm)
+            .HasPrecision(18, 3);
+        modelBuilder.Entity<BusinessTrip>()
+            .Property(b => b.DistanceKm)
+            .HasPrecision(18, 3);
+        modelBuilder.Entity<WasteEntry>()
+            .Property(w => w.MassTons)
+            .HasPrecision(18, 3);
+        modelBuilder.Entity<EmployeeCommute>()
+            .Property(e => e.AvgDistanceKm)
+            .HasPrecision(18, 3);
     }
 }

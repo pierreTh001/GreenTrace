@@ -14,8 +14,8 @@ public class SiteService : ISiteService
         _db = db;
     }
 
-    public Task<IEnumerable<CompanySite>> GetByCompanyAsync(Guid companyId)
-        => _db.CompanySites.Where(s => s.CompanyId == companyId).ToListAsync();
+    public async Task<IEnumerable<CompanySite>> GetByCompanyAsync(Guid companyId)
+        => await _db.CompanySites.Where(s => s.CompanyId == companyId).ToListAsync();
 
     public async Task<CompanySite> CreateAsync(Guid companyId, CompanySite site)
     {

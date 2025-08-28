@@ -4,18 +4,21 @@ using GreenTrace.Api.ViewModels.Suppliers;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace GreenTrace.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = "Subscribed")]
 public class SuppliersController : ControllerBase
 {
     private readonly ISupplierService _suppliers;
     public SuppliersController(ISupplierService suppliers) => _suppliers = suppliers;
 
     [HttpGet]
+    [SwaggerOperation(Summary = "Liste des fournisseurs",
+        Description = "Retourne la liste des fournisseurs de la société.")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _suppliers.GetAllAsync();
@@ -23,6 +26,8 @@ public class SuppliersController : ControllerBase
     }
 
     [HttpPost]
+    [SwaggerOperation(Summary = "Crée un fournisseur",
+        Description = "Ajoute un nouveau fournisseur et retourne sa représentation.")]
     public async Task<IActionResult> Create(CreateSupplierViewModel supplier)
     {
         var created = await _suppliers.CreateAsync(supplier.ToEntity());

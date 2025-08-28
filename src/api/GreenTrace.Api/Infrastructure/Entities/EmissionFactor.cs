@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class EmissionFactor
 {
+    [Key]
     public Guid Id { get; set; }
     public string Provider { get; set; } = null!;
     public string? Dataset { get; set; }

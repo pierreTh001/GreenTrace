@@ -4,6 +4,7 @@ using GreenTrace.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GreenTrace.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250828120805_InitialCreate")]
+    partial class InitialCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,8 +63,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("Quantity")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("ReportId")
                         .HasColumnType("uniqueidentifier");
@@ -143,8 +145,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("DistanceKm")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("EmissionFactorId")
                         .HasColumnType("uniqueidentifier");
@@ -255,8 +256,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("EquitySharePct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("Since")
                         .HasColumnType("datetime2");
@@ -306,12 +306,10 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Latitude")
-                        .HasPrecision(9, 6)
-                        .HasColumnType("decimal(9,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("Longitude")
-                        .HasPrecision(9, 6)
-                        .HasColumnType("decimal(9,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -463,8 +461,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("FactorCo2e")
-                        .HasPrecision(18, 8)
-                        .HasColumnType("decimal(18,8)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Geography")
                         .HasColumnType("nvarchar(max)");
@@ -565,8 +562,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ValueTco2e")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -580,8 +576,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AvgDistanceKm")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uniqueidentifier");
@@ -632,8 +627,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("ConsumptionKwh")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("ContractId")
                         .HasColumnType("uniqueidentifier");
@@ -655,8 +649,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<decimal?>("RenewableSharePct")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("ReportId")
                         .HasColumnType("uniqueidentifier");
@@ -766,8 +759,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Value")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -794,12 +786,10 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("FinancialScore")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("ImpactScore")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<bool>("IsMaterial")
                         .HasColumnType("bit");
@@ -900,7 +890,6 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("CategoryLabel")
@@ -926,8 +915,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Quantity")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("SourceDocumentId")
                         .HasColumnType("uniqueidentifier");
@@ -1123,8 +1111,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("DistanceTkm")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("EmissionFactorId")
                         .HasColumnType("uniqueidentifier");
@@ -1149,8 +1136,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("WeightTons")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -1188,71 +1174,6 @@ namespace GreenTrace.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("StakeholderGroups");
-                });
-
-            modelBuilder.Entity("GreenTrace.Api.Infrastructure.Entities.Subscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("EndsAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid>("PlanId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "Status");
-
-                    b.ToTable("Subscriptions");
-                });
-
-            modelBuilder.Entity("GreenTrace.Api.Infrastructure.Entities.SubscriptionPlan", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Interval")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PriceCents")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("SubscriptionPlans");
                 });
 
             modelBuilder.Entity("GreenTrace.Api.Infrastructure.Entities.Supplier", b =>
@@ -1298,8 +1219,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("BaselineValue")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("BaselineYear")
                         .HasColumnType("int");
@@ -1320,8 +1240,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("TargetValue")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("decimal(18,6)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TargetYear")
                         .HasColumnType("int");
@@ -1467,8 +1386,7 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("MassTons")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("PeriodEnd")
                         .HasColumnType("datetime2");
@@ -1539,7 +1457,6 @@ namespace GreenTrace.Api.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("VolumeM3")
-                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");

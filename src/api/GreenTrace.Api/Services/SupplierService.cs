@@ -13,8 +13,8 @@ public class SupplierService : ISupplierService
         _db = db;
     }
 
-    public Task<IEnumerable<Supplier>> GetAllAsync()
-        => _db.Suppliers.ToListAsync();
+    public async Task<IEnumerable<Supplier>> GetAllAsync()
+        => await _db.Suppliers.ToListAsync();
 
     public async Task<Supplier> CreateAsync(Supplier supplier)
     {

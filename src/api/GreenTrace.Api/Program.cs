@@ -1,9 +1,10 @@
-using GreenTrace.Api.Domain;
 using GreenTrace.Api.Infrastructure;
+using Entities = GreenTrace.Api.Infrastructure.Entities;
 using GreenTrace.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authorization;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +18,11 @@ builder.Services.AddDbContext<AppDbContext>(opt =>
 
 // 3) Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(o =>
+{
+    // Permet d'utiliser [SwaggerOperation] pour les résumés/descriptions
+    o.EnableAnnotations();
+});
 
 // Authentication & Authorization
 builder.Services.AddControllers();
@@ -35,8 +40,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Subscribed", policy => policy.Requirements.Add(new GreenTrace.Api.Authorization.SubscribedRequirement()));
+});
+builder.Services.AddScoped<IAuthorizationHandler, GreenTrace.Api.Authorization.SubscribedHandler>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IEmissionService, EmissionService>();
+builder.Services.AddScoped<IEmissionFactorService, EmissionFactorService>();
+builder.Services.AddScoped<ISiteService, SiteService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IEnergyService, EnergyService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IActivityDataService, ActivityDataService>();
+builder.Services.AddScoped<IRbacService, RbacService>();
 
 // 4) Build (⚠️ c’est bien Build(), pas Create(...))
 var app = builder.Build();
@@ -67,7 +88,15 @@ app.MapGet("/companies", async (AppDbContext db) =>
 
 app.MapPost("/companies", async (AppDbContext db, CompanyDto dto) =>
 {
-    var c = new Company { LegalName = dto.LegalName };
+    var c = new Entities.Company
+    {
+        Id = Guid.NewGuid(),
+        Name = dto.LegalName,
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow,
+        CreatedBy = Guid.Empty,
+        UpdatedBy = Guid.Empty
+    };
     db.Companies.Add(c);
     await db.SaveChangesAsync();
     return Results.Created($"/companies/{c.Id}", c);

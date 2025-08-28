@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class Document
 {
+    [Key]
     public Guid Id { get; set; }
     public Guid? CompanyId { get; set; }
     public Guid? ReportId { get; set; }

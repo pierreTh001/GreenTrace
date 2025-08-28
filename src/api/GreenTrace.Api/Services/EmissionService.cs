@@ -14,6 +14,6 @@ public class EmissionService : IEmissionService
         _db = db;
     }
 
-    public Task<IEnumerable<EmissionResult>> CalculateAsync(Guid reportId)
-        => _db.EmissionResults.Where(r => r.ReportId == reportId).ToListAsync();
+    public async Task<IEnumerable<EmissionResult>> CalculateAsync(Guid reportId)
+        => await _db.EmissionResults.Where(r => r.ReportId == reportId).ToListAsync();
 }

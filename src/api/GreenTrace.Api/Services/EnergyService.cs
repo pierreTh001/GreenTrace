@@ -14,8 +14,8 @@ public class EnergyService : IEnergyService
         _db = db;
     }
 
-    public Task<IEnumerable<EnergyEntry>> GetEntriesAsync(Guid companyId)
-        => _db.EnergyEntries.Where(e => e.CompanyId == companyId).ToListAsync();
+    public async Task<IEnumerable<EnergyEntry>> GetEntriesAsync(Guid companyId)
+        => await _db.EnergyEntries.Where(e => e.CompanyId == companyId).ToListAsync();
 
     public async Task<EnergyEntry> AddEntryAsync(Guid companyId, EnergyEntry entry)
     {

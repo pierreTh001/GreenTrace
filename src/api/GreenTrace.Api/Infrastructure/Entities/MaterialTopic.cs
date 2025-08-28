@@ -1,7 +1,9 @@
+using System.ComponentModel.DataAnnotations;
 namespace GreenTrace.Api.Infrastructure.Entities;
 
 public class MaterialTopic
 {
+    [Key]
     public Guid Id { get; set; }
     public Guid AssessmentId { get; set; }
     public string Code { get; set; } = null!;

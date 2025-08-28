@@ -13,8 +13,8 @@ public class ReportService : IReportService
         _db = db;
     }
 
-    public Task<IEnumerable<Report>> GetAllAsync()
-        => _db.Reports.ToListAsync();
+    public async Task<IEnumerable<Report>> GetAllAsync()
+        => await _db.Reports.ToListAsync();
 
     public Task<Report?> GetByIdAsync(Guid id)
         => _db.Reports.FindAsync(id).AsTask();
