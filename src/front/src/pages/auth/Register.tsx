@@ -5,13 +5,15 @@ import { useAuth } from '../../context/AuthContext'
 export default function Register() {
   const [email, setEmail] = useState('user@example.com')
   const [password, setPassword] = useState('user12345')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const { register } = useAuth()
   const nav = useNavigate()
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const ok = await register(email, password)
+    const ok = await register(email, password, firstName, lastName)
     if (!ok) setError("Un compte existe déjà avec cet email")
     else nav('/app')
   }
@@ -27,6 +29,10 @@ export default function Register() {
       <div className="flex items-center justify-center p-8">
         <form onSubmit={onSubmit} className="card w-full max-w-md">
           <h2 className="text-xl font-semibold">Créer un compte</h2>
+          <label className="label">Prénom</label>
+          <input className="input mb-3" value={firstName} onChange={e=>setFirstName(e.target.value)} required />
+          <label className="label">Nom</label>
+          <input className="input mb-3" value={lastName} onChange={e=>setLastName(e.target.value)} required />
           <label className="label">Email</label>
           <input className="input mb-3" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
           <label className="label">Mot de passe</label>

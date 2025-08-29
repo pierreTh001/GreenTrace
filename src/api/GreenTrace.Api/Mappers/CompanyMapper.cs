@@ -14,6 +14,10 @@ public static class CompanyMapper
         VatNumber = vm.VatNumber,
         NaceCode = vm.NaceCode,
         Website = vm.Website,
+        AddressLine1 = vm.AddressLine1,
+        AddressLine2 = vm.AddressLine2,
+        PostalCode = vm.PostalCode,
+        City = vm.City,
         HqCountry = vm.HqCountry,
         EmployeesCount = vm.EmployeesCount,
         ConsolidationMethod = vm.ConsolidationMethod,
@@ -29,6 +33,10 @@ public static class CompanyMapper
         company.VatNumber = vm.VatNumber;
         company.NaceCode = vm.NaceCode;
         company.Website = vm.Website;
+        company.AddressLine1 = vm.AddressLine1;
+        company.AddressLine2 = vm.AddressLine2;
+        company.PostalCode = vm.PostalCode;
+        company.City = vm.City;
         company.HqCountry = vm.HqCountry;
         company.EmployeesCount = vm.EmployeesCount;
         company.ConsolidationMethod = vm.ConsolidationMethod;
@@ -44,6 +52,10 @@ public static class CompanyMapper
         company.VatNumber,
         company.NaceCode,
         company.Website,
+        company.AddressLine1,
+        company.AddressLine2,
+        company.PostalCode,
+        company.City,
         company.HqCountry,
         company.EmployeesCount,
         company.ConsolidationMethod,

@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@greentrace.io')
-  const [password, setPassword] = useState('admin123')
+  const [email, setEmail] = useState('admin@thiebert.me')
+  const [password, setPassword] = useState('admin')
   const [error, setError] = useState<string | null>(null)
   const { login } = useAuth()
   const nav = useNavigate()
@@ -32,7 +32,7 @@ export default function Login() {
       <div className="flex items-center justify-center p-8">
         <form onSubmit={onSubmit} className="card w-full max-w-md">
           <h2 className="text-xl font-semibold">Connexion</h2>
-          <p className="text-sm text-slate-500 mb-4">Utilisez le compte de démo: admin@greentrace.io / admin123</p>
+          <p className="text-sm text-slate-500 mb-4">Utilisez le compte de démo: admin@thiebert.me / admin</p>
           <label className="label">Email</label>
           <input className="input mb-3" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
           <label className="label">Mot de passe</label>

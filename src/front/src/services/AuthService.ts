@@ -47,21 +47,23 @@ export const AuthService = {
       setToken(res.token)
       setCurrent({ id: 'me', email, role: 'User' })
       AuditService.log(email, 'Connexion')
-      await ensureSubscribed()
-      await CompanyService.bootstrapFromApi()
+      // Lancer l'initialisation en arrière-plan pour ne pas bloquer la connexion
+      ensureSubscribed().catch(()=>{})
+      CompanyService.bootstrapFromApi().catch(()=>{})
       return true
     } catch {
       return false
     }
   },
-  async register(email: string, password: string): Promise<boolean> {
+  async register(email: string, password: string, firstName: string, lastName: string): Promise<boolean> {
     try {
-      const res = await ApiClient.post<{ token: string }>('/api/auth/register', { email, password, firstName: '', lastName: '' })
+      const res = await ApiClient.post<{ token: string }>('/api/auth/register', { email, password, firstName, lastName })
       setToken(res.token)
       setCurrent({ id: 'me', email, role: 'User' })
       AuditService.log(email, 'Inscription')
-      await ensureSubscribed()
-      await CompanyService.bootstrapFromApi()
+      // Ne bloque pas la réussite d'inscription si l'init échoue
+      ensureSubscribed().catch(()=>{})
+      CompanyService.bootstrapFromApi().catch(()=>{})
       return true
     } catch {
       return false

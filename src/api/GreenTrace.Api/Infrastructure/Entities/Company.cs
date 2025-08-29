@@ -12,6 +12,10 @@ public class Company
     public string? VatNumber { get; set; }
     public string? NaceCode { get; set; }
     public string? Website { get; set; }
+    public string? AddressLine1 { get; set; }
+    public string? AddressLine2 { get; set; }
+    public string? PostalCode { get; set; }
+    public string? City { get; set; }
     public string? HqCountry { get; set; }
     public int? EmployeesCount { get; set; }
     public string? ConsolidationMethod { get; set; }

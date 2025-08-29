@@ -11,6 +11,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 using GreenTrace.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using GreenTrace.Api.Services;
 
 namespace GreenTrace.Api.Controllers;
 
@@ -21,10 +22,12 @@ public class CompaniesController : ControllerBase
 {
     private readonly ICompanyService _companies;
     private readonly AppDbContext _db;
-    public CompaniesController(ICompanyService companies, AppDbContext db)
+    private readonly ICompanyLookupService _lookup;
+    public CompaniesController(ICompanyService companies, AppDbContext db, ICompanyLookupService lookup)
     {
         _companies = companies;
         _db = db;
+        _lookup = lookup;
     }
 
     [HttpGet]
@@ -107,5 +110,16 @@ public class CompaniesController : ControllerBase
         if (!allowed) return Forbid();
         await _companies.SetParentAsync(id, parentId);
         return Ok();
+    }
+
+    [HttpGet("lookup")]
+    [AllowAnonymous]
+    [SwaggerOperation(Summary = "Recherche par raison sociale",
+        Description = "Retourne des suggestions (raison sociale → SIREN/SIRET/TVA/NACE/formejuridique/adresse).")]
+    public async Task<IActionResult> Lookup([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return Ok(Array.Empty<object>());
+        var result = await _lookup.SearchAsync(query);
+        return Ok(result);
     }
 }

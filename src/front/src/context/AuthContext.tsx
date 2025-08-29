@@ -4,7 +4,7 @@ import { AuthService, type User } from '../services/AuthService'
 type AuthContextType = {
   user: User | null
   login: (email: string, password: string) => Promise<boolean>
-  register: (email: string, password: string) => Promise<boolean>
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user,
       login: async (e,p) => AuthService.login(e,p),
-      register: async (e,p) => AuthService.register(e,p),
+      register: async (e,p,fn,ln) => AuthService.register(e,p,fn,ln),
       logout: () => AuthService.logout()
     }}>
       {children}
