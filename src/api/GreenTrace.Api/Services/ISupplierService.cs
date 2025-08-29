@@ -4,6 +4,6 @@ namespace GreenTrace.Api.Services;
 
 public interface ISupplierService
 {
-    Task<IEnumerable<Supplier>> GetAllAsync();
-    Task<Supplier> CreateAsync(Supplier supplier);
+    Task<IEnumerable<Supplier>> GetByCompanyAsync(Guid companyId);
+    Task<Supplier> CreateAsync(Guid companyId, Supplier supplier);
 }

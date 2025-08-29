@@ -4,9 +4,13 @@ using GreenTrace.Api.ViewModels.Companies;
 using GreenTrace.Api.Infrastructure.Entities;
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;
+
+
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
+using GreenTrace.Api.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace GreenTrace.Api.Controllers;
 
@@ -16,14 +20,22 @@ namespace GreenTrace.Api.Controllers;
 public class CompaniesController : ControllerBase
 {
     private readonly ICompanyService _companies;
-    public CompaniesController(ICompanyService companies) => _companies = companies;
+    private readonly AppDbContext _db;
+    public CompaniesController(ICompanyService companies, AppDbContext db)
+    {
+        _companies = companies;
+        _db = db;
+    }
 
     [HttpGet]
     [SwaggerOperation(Summary = "Liste des entreprises",
-        Description = "Retourne la liste de toutes les entreprises.")]
+        Description = "Retourne les entreprises auxquelles l’utilisateur appartient.")]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _companies.GetAllAsync();
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = Guid.Parse(userIdStr!);
+        var companyIds = _db.UserCompanyRoles.Where(u => u.UserId == userId).Select(u => u.CompanyId).Distinct();
+        var result = await _db.Companies.Where(c => companyIds.Contains(c.Id)).ToListAsync();
         return Ok(result.Select(c => c.ToViewModel()));
     }
 
@@ -32,6 +44,10 @@ public class CompaniesController : ControllerBase
         Description = "Retourne l’entreprise correspondant à l’identifiant fourni.")]
     public async Task<IActionResult> Get(Guid id)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = Guid.Parse(userIdStr!);
+        var allowed = _db.UserCompanyRoles.Any(u => u.UserId == userId && u.CompanyId == id);
+        if (!allowed) return Forbid();
         var company = await _companies.GetByIdAsync(id);
         if (company == null) return NotFound();
         return Ok(company.ToViewModel());
@@ -55,6 +71,10 @@ public class CompaniesController : ControllerBase
         Description = "Met à jour les informations de l’entreprise spécifiée.")]
     public async Task<IActionResult> Update(Guid id, UpdateCompanyViewModel company)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = Guid.Parse(userIdStr!);
+        var allowed = _db.UserCompanyRoles.Any(u => u.UserId == userId && u.CompanyId == id);
+        if (!allowed) return Forbid();
         var entity = new Company();
         company.MapTo(entity);
         var updated = await _companies.UpdateAsync(id, entity);
@@ -67,6 +87,10 @@ public class CompaniesController : ControllerBase
         Description = "Supprime l’entreprise identifiée (suppression logique si applicable).")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = Guid.Parse(userIdStr!);
+        var allowed = _db.UserCompanyRoles.Any(u => u.UserId == userId && u.CompanyId == id);
+        if (!allowed) return Forbid();
         await _companies.DeleteAsync(id);
         return NoContent();
     }
@@ -77,6 +101,10 @@ public class CompaniesController : ControllerBase
         Description = "Lie l’entreprise à une société parente.")]
     public async Task<IActionResult> SetParent(Guid id, Guid parentId)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        var userId = Guid.Parse(userIdStr!);
+        var allowed = _db.UserCompanyRoles.Any(u => u.UserId == userId && u.CompanyId == id);
+        if (!allowed) return Forbid();
         await _companies.SetParentAsync(id, parentId);
         return Ok();
     }

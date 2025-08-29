@@ -80,29 +80,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { ok = true, at = DateTime.UtcNow }));
 
-app.MapGet("/companies", async (AppDbContext db) =>
-{
-    var all = await db.Companies.OrderBy(c => c.Id).ToListAsync();
-    return Results.Ok(all);
-});
-
-app.MapPost("/companies", async (AppDbContext db, CompanyDto dto) =>
-{
-    var c = new Entities.Company
-    {
-        Id = Guid.NewGuid(),
-        Name = dto.LegalName,
-        CreatedAt = DateTimeOffset.UtcNow,
-        UpdatedAt = DateTimeOffset.UtcNow,
-        CreatedBy = Guid.Empty,
-        UpdatedBy = Guid.Empty
-    };
-    db.Companies.Add(c);
-    await db.SaveChangesAsync();
-    return Results.Created($"/companies/{c.Id}", c);
-});
-
 app.Run();
 
-// DTO local (léger) — si tu préfères, mets-le dans un fichier séparé.
-public record CompanyDto(string LegalName);
+// DTO local supprimé; utiliser le CompaniesController.

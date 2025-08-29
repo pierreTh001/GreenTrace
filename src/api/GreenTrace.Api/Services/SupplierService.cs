@@ -13,12 +13,13 @@ public class SupplierService : ISupplierService
         _db = db;
     }
 
-    public async Task<IEnumerable<Supplier>> GetAllAsync()
-        => await _db.Suppliers.ToListAsync();
+    public async Task<IEnumerable<Supplier>> GetByCompanyAsync(Guid companyId)
+        => await _db.Suppliers.Where(s => s.CompanyId == companyId).ToListAsync();
 
-    public async Task<Supplier> CreateAsync(Supplier supplier)
+    public async Task<Supplier> CreateAsync(Guid companyId, Supplier supplier)
     {
         if (supplier.Id == Guid.Empty) supplier.Id = Guid.NewGuid();
+        supplier.CompanyId = companyId;
         supplier.CreatedAt = DateTimeOffset.UtcNow;
         supplier.UpdatedAt = supplier.CreatedAt;
         _db.Suppliers.Add(supplier);
