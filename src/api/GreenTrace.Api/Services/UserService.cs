@@ -37,11 +37,13 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
 
         await EnsureRoleExists("User");
-        var role = await _db.Roles.FirstAsync(r => r.Code == "User");
+        await EnsureRoleExists("Admin");
+
+        var roleUser = await _db.Roles.FirstAsync(r => r.Code == "User");
         _db.UserSystemRoles.Add(new UserSystemRole
         {
             UserId = user.Id,
-            RoleId = role.Id,
+            RoleId = roleUser.Id,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
             CreatedBy = user.Id,
@@ -49,7 +51,31 @@ public class UserService : IUserService
         });
         await _db.SaveChangesAsync();
 
-        return (user, new[] { "User" });
+        // If there is no Admin yet, promote first registered user to Admin
+        var hasAdmin = await (from usr in _db.UserSystemRoles
+                              join r in _db.Roles on usr.RoleId equals r.Id
+                              where r.Code == "Admin"
+                              select usr).AnyAsync();
+        if (!hasAdmin)
+        {
+            var roleAdmin = await _db.Roles.FirstAsync(r => r.Code == "Admin");
+            _db.UserSystemRoles.Add(new UserSystemRole
+            {
+                UserId = user.Id,
+                RoleId = roleAdmin.Id,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                CreatedBy = user.Id,
+                UpdatedBy = user.Id
+            });
+            await _db.SaveChangesAsync();
+        }
+
+        var rolesForUser = await (from usr in _db.UserSystemRoles
+                                  join r in _db.Roles on usr.RoleId equals r.Id
+                                  where usr.UserId == user.Id
+                                  select r.Code).ToListAsync();
+        return (user, rolesForUser);
     }
 
     public async Task<(User user, IEnumerable<string> roles)?> LoginAsync(string email, string password)

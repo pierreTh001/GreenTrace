@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using Swashbuckle.AspNetCore.Annotations;
+using GreenTrace.Api.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using GreenTrace.Api.ViewModels.Companies;
+using GreenTrace.Api.ViewModels.Reports;
 
 namespace GreenTrace.Api.Controllers;
 
@@ -13,10 +17,12 @@ namespace GreenTrace.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _users;
+    private readonly AppDbContext _db;
 
-    public UsersController(IUserService users)
+    public UsersController(IUserService users, AppDbContext db)
     {
         _users = users;
+        _db = db;
     }
 
     [HttpGet]
@@ -26,7 +32,16 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var users = await _users.GetAllAsync();
-        var result = users.Select(u => u.ToViewModel());
+        var result = new List<UserSummaryViewModel>();
+        var roleMap = await (from usr in _db.UserSystemRoles
+                              join r in _db.Roles on usr.RoleId equals r.Id
+                              group r.Code by usr.UserId into g
+                              select new { UserId = g.Key, Roles = g.ToList() }).ToListAsync();
+        foreach (var u in users)
+        {
+            var roles = roleMap.FirstOrDefault(x => x.UserId == u.Id)?.Roles ?? new List<string>();
+            result.Add(new UserSummaryViewModel(u.Id, u.Email, u.FirstName, u.LastName, roles));
+        }
         return Ok(result);
     }
 
@@ -38,7 +53,36 @@ public class UsersController : ControllerBase
     {
         var user = await _users.GetByIdAsync(id);
         if (user == null) return NotFound();
-        return Ok(user.ToViewModel());
+
+        var sysRoles = await (from usr in _db.UserSystemRoles
+                              join r in _db.Roles on usr.RoleId equals r.Id
+                              where usr.UserId == id
+                              select r.Code).ToListAsync();
+
+        // Companies where user has a role
+        var companies = await (from ucr in _db.UserCompanyRoles
+                               where ucr.UserId == id
+                               group ucr by ucr.CompanyId into g
+                               select g.Key).ToListAsync();
+
+        var companyInfos = new List<UserCompanyInfoViewModel>();
+        foreach (var cid in companies)
+        {
+            var comp = await _db.Companies.FindAsync(cid);
+            if (comp == null) continue;
+            var roles = await (from ucr in _db.UserCompanyRoles
+                               join r in _db.Roles on ucr.RoleId equals r.Id
+                               where ucr.UserId == id && ucr.CompanyId == cid
+                               select r.Code).ToListAsync();
+            var reports = await _db.Reports.Where(r => r.CompanyId == cid).ToListAsync();
+            companyInfos.Add(new UserCompanyInfoViewModel(
+                comp.ToViewModel(),
+                roles,
+                reports.Select(r => r.ToViewModel())));
+        }
+
+        var detail = new UserDetailViewModel(user.Id, user.Email, user.FirstName, user.LastName, sysRoles, companyInfos);
+        return Ok(detail);
     }
 
     [HttpPost]
@@ -48,7 +92,9 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Create(CreateUserViewModel req)
     {
         var result = await _users.RegisterAsync(req.Email, req.Password, req.FirstName, req.LastName);
-        return Ok(result.user.ToViewModel());
+        var roles = result.roles.ToList();
+        var vm = new UserSummaryViewModel(result.user.Id, result.user.Email, result.user.FirstName, result.user.LastName, roles);
+        return Ok(vm);
     }
 
     [HttpPut("{id}")]
@@ -58,7 +104,12 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Update(Guid id, UpdateUserViewModel req)
     {
         var user = await _users.UpdateAsync(id, req.FirstName, req.LastName);
-        return Ok(user.ToViewModel());
+        var sysRoles = await (from usr in _db.UserSystemRoles
+                              join r in _db.Roles on usr.RoleId equals r.Id
+                              where usr.UserId == id
+                              select r.Code).ToListAsync();
+        var vm = new UserSummaryViewModel(user.Id, user.Email, user.FirstName, user.LastName, sysRoles);
+        return Ok(vm);
     }
 
     [HttpDelete("{id}")]
