@@ -41,16 +41,44 @@ public class CompanyLookupService : ICompanyLookupService
             var natureJuridique = item.GetPropertyOrDefault("nature_juridique");
 
             string? siret = null, address = null, cp = null, city = null, country = "France";
+            string? numero = null, typeVoie = null, libelleVoie = null;
             if (item.TryGetProperty("siege", out var siege) && siege.ValueKind == JsonValueKind.Object)
             {
                 siret = siege.GetPropertyOrDefault("siret");
                 address = siege.GetPropertyOrDefault("adresse");
                 cp = siege.GetPropertyOrDefault("code_postal");
                 city = siege.GetPropertyOrDefault("libelle_commune");
+                numero = siege.GetPropertyOrDefault("numero_voie");
+                typeVoie = siege.GetPropertyOrDefault("type_voie");
+                libelleVoie = siege.GetPropertyOrDefault("libelle_voie");
             }
 
             if (!string.IsNullOrWhiteSpace(name) && !string.IsNullOrWhiteSpace(siren))
             {
+                // Build street line from components when possible, else from 'adresse'
+                string? street = null;
+                if (!string.IsNullOrWhiteSpace(libelleVoie) || !string.IsNullOrWhiteSpace(numero))
+                {
+                    street = $"{numero} {typeVoie} {libelleVoie}".Replace("  ", " ").Trim();
+                }
+                else
+                {
+                    street = address;
+                }
+                // Remove postal code / city from street if present
+                if (!string.IsNullOrWhiteSpace(street))
+                {
+                    if (!string.IsNullOrWhiteSpace(cp))
+                    {
+                        var idx = street.IndexOf(cp, StringComparison.OrdinalIgnoreCase);
+                        if (idx > 0) street = street.Substring(0, idx).Trim().TrimEnd(',', ';');
+                    }
+                    if (!string.IsNullOrWhiteSpace(city))
+                    {
+                        var idx2 = street.IndexOf(city!, StringComparison.OrdinalIgnoreCase);
+                        if (idx2 > 0) street = street.Substring(0, idx2).Trim().TrimEnd(',', ';');
+                    }
+                }
                 list.Add(new CompanyLookupItemViewModel(
                     Name: name!,
                     LegalForm: natureJuridique,
@@ -58,7 +86,7 @@ public class CompanyLookupService : ICompanyLookupService
                     Siret: siret,
                     VatNumber: null,
                     NaceCode: naf,
-                    AddressLine1: address,
+                    AddressLine1: string.IsNullOrWhiteSpace(street) ? null : street,
                     PostalCode: cp,
                     City: city,
                     Country: country));

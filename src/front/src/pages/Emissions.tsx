@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { EmissionsService } from '../services/EmissionsService'
+import { useToast } from '../context/ToastContext'
 
 type S1 = { category: string; tco2e: number }
 type S2 = { method: 'market'|'location'; tco2e: number }
 type S3 = { category: string; tco2e: number }
 
 export default function Emissions() {
+  const toast = useToast()
   const init = EmissionsService.get()
   const [scope1, setS1] = useState<S1[]>(init.scope1)
   const [scope2, setS2] = useState<S2[]>(init.scope2)
@@ -17,7 +19,7 @@ export default function Emissions() {
 
   const save = () => {
     EmissionsService.save({ scope1, scope2, scope3 })
-    alert('Emissions enregistrées')
+    toast.success('Emissions enregistrées')
   }
 
   const totals = EmissionsService.totals()

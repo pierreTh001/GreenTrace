@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CompanyService } from '../services/CompanyService'
+import { useToast } from '../context/ToastContext'
 
 const TOPICS = [
   'ESRS 2 - Informations générales',
@@ -16,9 +17,10 @@ const TOPICS = [
 ]
 
 export default function Materiality() {
+  const toast = useToast()
   const [mat, setMat] = useState<Record<string, boolean>>({...CompanyService.getMateriality()})
   const toggle = (k: string) => setMat(m => ({...m, [k]: !m[k]}))
-  const save = () => { CompanyService.saveMateriality(mat); alert('Matérialité enregistrée') }
+  const save = () => { CompanyService.saveMateriality(mat); toast.success('Matérialité enregistrée') }
 
   return (
     <div className="max-w-3xl space-y-6">

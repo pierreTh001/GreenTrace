@@ -14,6 +14,10 @@ async function request<T>(method: string, url: string, body?: any): Promise<T> {
     body: body ? JSON.stringify(body) : undefined
   })
   if (!res.ok) {
+    if (res.status === 401) {
+      // Token invalide/expiré → déconnexion silencieuse
+      try { AuthService.logout() } catch {}
+    }
     const txt = await res.text().catch(() => '')
     throw new Error(`${res.status} ${res.statusText}: ${txt}`)
   }
@@ -29,4 +33,3 @@ export const ApiClient = {
   put: <T>(url: string, body?: any) => request<T>('PUT', url, body),
   del: <T>(url: string) => request<T>('DELETE', url)
 }
-

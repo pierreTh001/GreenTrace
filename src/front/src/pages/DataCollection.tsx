@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { CompanyService } from '../services/CompanyService'
+import { useToast } from '../context/ToastContext'
 
 export default function DataCollection() {
+  const toast = useToast()
   const data = CompanyService.getDataCollection()
   const [policies, setPolicies] = useState<string>(data.policies ?? '')
   const [risks, setRisks] = useState<string>(data.risks ?? '')
@@ -11,7 +13,7 @@ export default function DataCollection() {
 
   const save = () => {
     CompanyService.saveDataCollection({ policies, risks, targets, metrics: { energyMWh, renewableShare } })
-    alert('Collecte enregistrée')
+    toast.success('Collecte enregistrée')
   }
 
   return (

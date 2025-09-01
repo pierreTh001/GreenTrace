@@ -6,6 +6,13 @@ import { ApiClient } from './ApiClient'
 type LocalCompany = {
   id?: string
   name?: string
+  // Legacy/mock fields used by dashboard/report (kept optional)
+  sector?: string | null
+  employees?: number | null
+  revenue?: number | null
+  headquarters?: string | null
+  euListed?: boolean | null
+  reportingYear?: number | null
   addressLine1?: string | null
   addressLine2?: string | null
   postalCode?: string | null
@@ -44,8 +51,36 @@ async function fetchCompany(id: string): Promise<any> {
   return await ApiClient.get<any>(`/api/companies/${id}`)
 }
 
-async function createCompany(name: string): Promise<any> {
-  return await ApiClient.post<any>('/api/companies', { name })
+async function createCompany(payload: LocalCompany): Promise<any> {
+  return await ApiClient.post<any>('/api/companies', {
+    name: payload.name,
+    legalForm: payload.legalForm ?? '',
+    siren: payload.siren ?? '',
+    siret: payload.siret ?? '',
+    vatNumber: payload.vatNumber ?? '',
+    naceCode: payload.naceCode ?? '',
+    website: payload.website ?? '',
+    addressLine1: payload.addressLine1 ?? '',
+    addressLine2: payload.addressLine2 ?? null,
+    postalCode: payload.postalCode ?? '',
+    city: payload.city ?? '',
+    hqCountry: payload.hqCountry ?? '',
+    employeesCount: payload.employeesCount ?? 0,
+    consolidationMethod: payload.consolidationMethod ?? '',
+    esgContactEmail: payload.esgContactEmail ?? ''
+  })
+}
+
+async function ensureActiveSubscription() {
+  try {
+    const me = await ApiClient.get<any>('/api/subscriptions/me')
+    if (me) return
+    const plans = await ApiClient.get<any[]>('/api/subscriptions/plans')
+    const basic = plans.find(p => p.code === 'BASIC') || plans[0]
+    if (basic) await ApiClient.post('/api/subscriptions/subscribe', { planId: basic.id })
+  } catch {
+    // ignore; API will enforce policy if missing
+  }
 }
 
 async function updateCompany(id: string, patch: Partial<LocalCompany>) {
@@ -73,12 +108,20 @@ export const CompanyService = {
   async bootstrapFromApi() {
     const db = ensureLocal()
     const list = await fetchCompanies()
+    // If local companyId is not part of allowed companies, drop it
+    if (db.currentCompanyId && !list.some(c => c.id === db.currentCompanyId)) {
+      db.currentCompanyId = undefined
+      db.company = {}
+      saveDb(db)
+    }
     let companyId = db.currentCompanyId
     if (!companyId) companyId = list[0]?.id
     if (!companyId) {
-      // Create a placeholder company for the user
-      const created = await createCompany('Mon Entreprise')
-      companyId = created.id
+      // Aucune entreprise: laisser le formulaire vide pour création manuelle
+      db.company = {}
+      db.currentCompanyId = undefined
+      saveDb(db)
+      return
     }
     const c = await fetchCompany(companyId)
     db.currentCompanyId = companyId
@@ -109,23 +152,82 @@ export const CompanyService = {
     const db = ensureLocal()
     const id = db.currentCompanyId
     if (id) {
-      await updateCompany(id, {
-        name: patch.name ?? db.company.name ?? '',
-        addressLine1: patch.addressLine1 ?? db.company.addressLine1 ?? null,
-        addressLine2: patch.addressLine2 ?? db.company.addressLine2 ?? null,
-        postalCode: patch.postalCode ?? db.company.postalCode ?? null,
-        city: patch.city ?? db.company.city ?? null,
-        legalForm: patch.legalForm ?? db.company.legalForm ?? null,
-        siren: patch.siren ?? db.company.siren ?? null,
-        siret: patch.siret ?? db.company.siret ?? null,
-        vatNumber: patch.vatNumber ?? db.company.vatNumber ?? null,
-        naceCode: patch.naceCode ?? db.company.naceCode ?? null,
-        website: patch.website ?? db.company.website ?? null,
-        hqCountry: patch.hqCountry ?? db.company.hqCountry ?? null,
-        employeesCount: patch.employeesCount ?? db.company.employeesCount ?? null,
-        consolidationMethod: patch.consolidationMethod ?? db.company.consolidationMethod ?? null,
-        esgContactEmail: patch.esgContactEmail ?? db.company.esgContactEmail ?? null
-      })
+      try {
+        await updateCompany(id, {
+          name: patch.name ?? db.company.name ?? '',
+          addressLine1: patch.addressLine1 ?? db.company.addressLine1 ?? null,
+          addressLine2: patch.addressLine2 ?? db.company.addressLine2 ?? null,
+          postalCode: patch.postalCode ?? db.company.postalCode ?? null,
+          city: patch.city ?? db.company.city ?? null,
+          legalForm: patch.legalForm ?? db.company.legalForm ?? null,
+          siren: patch.siren ?? db.company.siren ?? null,
+          siret: patch.siret ?? db.company.siret ?? null,
+          vatNumber: patch.vatNumber ?? db.company.vatNumber ?? null,
+          naceCode: patch.naceCode ?? db.company.naceCode ?? null,
+          website: patch.website ?? db.company.website ?? null,
+          hqCountry: patch.hqCountry ?? db.company.hqCountry ?? null,
+          employeesCount: patch.employeesCount ?? db.company.employeesCount ?? null,
+          consolidationMethod: patch.consolidationMethod ?? db.company.consolidationMethod ?? null,
+          esgContactEmail: patch.esgContactEmail ?? db.company.esgContactEmail ?? null
+        })
+      } catch (e:any) {
+        const msg = String(e?.message || e || '')
+        if (msg.startsWith('404') || msg.startsWith('403')) {
+          // Company not found on server → create anew
+          await ensureActiveSubscription()
+          const payload: LocalCompany = {
+            name: patch.name ?? db.company.name,
+            legalForm: patch.legalForm ?? db.company.legalForm,
+            siren: patch.siren ?? db.company.siren,
+            siret: patch.siret ?? db.company.siret,
+            vatNumber: patch.vatNumber ?? db.company.vatNumber,
+            naceCode: patch.naceCode ?? db.company.naceCode,
+            website: patch.website ?? db.company.website,
+            addressLine1: patch.addressLine1 ?? db.company.addressLine1,
+            addressLine2: patch.addressLine2 ?? db.company.addressLine2,
+            postalCode: patch.postalCode ?? db.company.postalCode,
+            city: patch.city ?? db.company.city,
+            hqCountry: patch.hqCountry ?? db.company.hqCountry,
+            employeesCount: patch.employeesCount ?? db.company.employeesCount,
+            consolidationMethod: patch.consolidationMethod ?? db.company.consolidationMethod,
+            esgContactEmail: patch.esgContactEmail ?? db.company.esgContactEmail
+          }
+          const created = await createCompany(payload)
+          db.currentCompanyId = created.id
+          db.company = { ...payload, id: created.id }
+          saveDb(db)
+          AuditService.log('system', 'Création de l\'entreprise (fallback 404)')
+          return
+        }
+        throw e
+      }
+    } else {
+      // Création de l'entreprise si aucune n'existe encore
+      await ensureActiveSubscription()
+      const payload: LocalCompany = {
+        name: patch.name ?? db.company.name,
+        legalForm: patch.legalForm ?? db.company.legalForm,
+        siren: patch.siren ?? db.company.siren,
+        siret: patch.siret ?? db.company.siret,
+        vatNumber: patch.vatNumber ?? db.company.vatNumber,
+        naceCode: patch.naceCode ?? db.company.naceCode,
+        website: patch.website ?? db.company.website,
+        addressLine1: patch.addressLine1 ?? db.company.addressLine1,
+        addressLine2: patch.addressLine2 ?? db.company.addressLine2,
+        postalCode: patch.postalCode ?? db.company.postalCode,
+        city: patch.city ?? db.company.city,
+        hqCountry: patch.hqCountry ?? db.company.hqCountry,
+        employeesCount: patch.employeesCount ?? db.company.employeesCount,
+        consolidationMethod: patch.consolidationMethod ?? db.company.consolidationMethod,
+        esgContactEmail: patch.esgContactEmail ?? db.company.esgContactEmail
+      }
+      const created = await createCompany(payload)
+      db.currentCompanyId = created.id
+      // merge with id and save
+      db.company = { ...payload, id: created.id }
+      saveDb(db)
+      AuditService.log('system', 'Création de l\'entreprise')
+      return
     }
     db.company = { ...db.company, ...patch }
     saveDb(db)

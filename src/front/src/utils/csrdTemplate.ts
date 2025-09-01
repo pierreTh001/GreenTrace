@@ -10,16 +10,25 @@ export function buildReportHtml() {
 
   const yes = (v: boolean) => v ? 'Oui' : 'Non'
 
+  const reportingYear = company.reportingYear || new Date().getFullYear()
+  const sector = (company as any).sector || company.naceCode || '—'
+  const headquarters = (company as any).headquarters
+    || [company.city, company.hqCountry].filter(Boolean).join(', ')
+    || '—'
+  const employees = (company as any).employees ?? company.employeesCount ?? '—'
+  const revenue = (company as any).revenue
+  const euListed = (company as any).euListed ?? false
+
   return `
     <div style="font-family: Inter, ui-sans-serif, system-ui; padding: 24px; width: 800px;">
-      <h1 style="font-size: 28px; margin-bottom: 4px;">Rapport de durabilité (CSRD) — ${company.reportingYear}</h1>
-      <div style="color:#64748b;">${company.name} — ${company.sector}, ${company.headquarters}</div>
+      <h1 style="font-size: 28px; margin-bottom: 4px;">Rapport de durabilité (CSRD) — ${reportingYear}</h1>
+      <div style="color:#64748b;">${company.name ?? ''} — ${sector}, ${headquarters}</div>
 
       <h2 style="margin-top: 24px; font-size: 20px;">Informations générales (ESRS 2)</h2>
       <ul>
-        <li>Employés: <b>${company.employees}</b></li>
-        <li>Chiffre d'affaires: <b>${company.revenue.toLocaleString('fr-FR')} €</b></li>
-        <li>Entreprise cotée UE: <b>${yes(company.euListed)}</b></li>
+        <li>Employés: <b>${employees}</b></li>
+        <li>Chiffre d'affaires: <b>${revenue != null ? Number(revenue).toLocaleString('fr-FR') + ' €' : '—'}</b></li>
+        <li>Entreprise cotée UE: <b>${yes(!!euListed)}</b></li>
       </ul>
 
       <h2 style="margin-top: 16px; font-size: 20px;">Gouvernance & Modèle d'affaires (ESRS 2)</h2>
@@ -44,7 +53,7 @@ export function buildReportHtml() {
       </ul>
 
       <h2 style="margin-top: 16px; font-size: 20px;">Méthodologies & Périmètre</h2>
-      <p>Méthodologie simplifiée GHG Protocol pour S1/S2/S3. Périmètre: ${company.name} (consolidé: ${yes(false)}).</p>
+      <p>Méthodologie simplifiée GHG Protocol pour S1/S2/S3. Périmètre: ${company.name ?? ''} (consolidé: ${yes(false)}).</p>
 
       <hr style="margin: 24px 0;" />
 

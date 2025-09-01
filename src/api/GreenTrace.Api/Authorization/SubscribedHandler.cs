@@ -10,6 +10,13 @@ public class SubscribedHandler(ISubscriptionService subscriptions) : Authorizati
 
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, SubscribedRequirement requirement)
     {
+        // Admins bypass subscription requirement
+        if (context.User.IsInRole("Admin"))
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var subClaim = context.User.FindFirst(ClaimTypes.NameIdentifier) ?? context.User.FindFirst("sub");
         if (subClaim == null) return;
         if (!Guid.TryParse(subClaim.Value, out var userId)) return;
@@ -20,4 +27,3 @@ public class SubscribedHandler(ISubscriptionService subscriptions) : Authorizati
         }
     }
 }
-

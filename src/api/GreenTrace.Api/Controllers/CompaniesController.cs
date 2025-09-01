@@ -78,10 +78,17 @@ public class CompaniesController : ControllerBase
         var userId = Guid.Parse(userIdStr!);
         var allowed = _db.UserCompanyRoles.Any(u => u.UserId == userId && u.CompanyId == id);
         if (!allowed) return Forbid();
-        var entity = new Company();
-        company.MapTo(entity);
-        var updated = await _companies.UpdateAsync(id, entity);
-        return Ok(updated.ToViewModel());
+        try
+        {
+            var entity = new Company();
+            company.MapTo(entity);
+            var updated = await _companies.UpdateAsync(id, entity);
+            return Ok(updated.ToViewModel());
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpDelete("{id}")]

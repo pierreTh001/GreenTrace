@@ -82,6 +82,10 @@ public class CompanyService : ICompanyService
         existing.VatNumber = company.VatNumber;
         existing.NaceCode = company.NaceCode;
         existing.Website = company.Website;
+        existing.AddressLine1 = company.AddressLine1;
+        existing.AddressLine2 = company.AddressLine2;
+        existing.PostalCode = company.PostalCode;
+        existing.City = company.City;
         existing.HqCountry = company.HqCountry;
         existing.EmployeesCount = company.EmployeesCount;
         existing.ConsolidationMethod = company.ConsolidationMethod;
