@@ -11,7 +11,6 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Security.Claims;
 using GreenTrace.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using GreenTrace.Api.Services;
 
 namespace GreenTrace.Api.Controllers;
 

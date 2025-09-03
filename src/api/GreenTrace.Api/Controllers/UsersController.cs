@@ -9,7 +9,7 @@ using GreenTrace.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using GreenTrace.Api.ViewModels.Companies;
 using GreenTrace.Api.ViewModels.Reports;
-using GreenTrace.Api.Services;
+using Microsoft.Data.SqlClient;
 
 namespace GreenTrace.Api.Controllers;
 
@@ -46,6 +46,34 @@ public class UsersController : ControllerBase
             result.Add(new UserSummaryViewModel(u.Id, u.Email, u.FirstName, u.LastName, roles));
         }
         return Ok(result);
+    }
+
+    public record AdminUserOverview(Guid Id, string Email, string? FirstName, string? LastName, string Companies, string? PlanName);
+
+    [HttpGet("overview")]
+    [Authorize(Roles = "Admin")]
+    [SwaggerOperation(Summary = "Vue d’ensemble utilisateurs",
+        Description = "Liste les utilisateurs avec entreprises associées et abonnement courant (admin).")]
+    public async Task<IActionResult> Overview()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var data = await (from u in _db.Users
+                          select new AdminUserOverview(
+                              u.Id,
+                              u.Email,
+                              u.FirstName,
+                              u.LastName,
+                              string.Join(", ", (from ucr in _db.UserCompanyRoles
+                                                   join c in _db.Companies on ucr.CompanyId equals c.Id
+                                                   where ucr.UserId == u.Id
+                                                   select c.Name).Distinct()),
+                              (from s in _db.Subscriptions
+                               where s.UserId == u.Id && (s.EndsAt == null || s.EndsAt > now)
+                               orderby s.StartedAt descending
+                               select (from p in _db.SubscriptionPlans where p.Id == s.PlanId select (p.Name ?? p.Code)).FirstOrDefault()
+                              ).FirstOrDefault()
+                          )).ToListAsync();
+        return Ok(data);
     }
 
     [HttpGet("{id}")]
@@ -97,6 +125,43 @@ public class UsersController : ControllerBase
         var result = await _users.RegisterAsync(req.Email, req.Password, req.FirstName, req.LastName);
         var roles = result.roles.ToList();
         var vm = new UserSummaryViewModel(result.user.Id, result.user.Email, result.user.FirstName, result.user.LastName, roles);
+        // Optional role assignment (e.g., Admin)
+        if (!string.IsNullOrWhiteSpace(req.Role))
+        {
+            var code = req.Role!;
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.Code == code);
+            if (role == null)
+            {
+                role = new Infrastructure.Entities.Role
+                {
+                    Id = Guid.NewGuid(),
+                    Code = code,
+                    Label = code,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = result.user.Id,
+                    UpdatedBy = result.user.Id
+                };
+                _db.Roles.Add(role);
+                await _db.SaveChangesAsync();
+            }
+            var has = await _db.UserSystemRoles.AnyAsync(x => x.UserId == result.user.Id && x.RoleId == role.Id);
+            if (!has)
+            {
+                _db.UserSystemRoles.Add(new Infrastructure.Entities.UserSystemRole
+                {
+                    UserId = result.user.Id,
+                    RoleId = role.Id,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = result.user.Id,
+                    UpdatedBy = result.user.Id
+                });
+                await _db.SaveChangesAsync();
+                roles.Add(code);
+                vm = new UserSummaryViewModel(result.user.Id, result.user.Email, result.user.FirstName, result.user.LastName, roles);
+            }
+        }
         return Ok(vm);
     }
 
@@ -113,6 +178,54 @@ public class UsersController : ControllerBase
                               select r.Code).ToListAsync();
         var vm = new UserSummaryViewModel(user.Id, user.Email, user.FirstName, user.LastName, sysRoles);
         return Ok(vm);
+    }
+
+    public record SetRoleRequest(string Role);
+
+    [HttpPut("{id}/role")]
+    [Authorize(Roles = "Admin")]
+    [SwaggerOperation(Summary = "Définit le rôle (Admin/User)",
+        Description = "Assigne ou retire le rôle Admin à l’utilisateur.")]
+    public async Task<IActionResult> SetRole(Guid id, SetRoleRequest req)
+    {
+        var roleCode = (req.Role ?? "User").Trim();
+        var roleAdmin = await _db.Roles.FirstOrDefaultAsync(r => r.Code == "Admin");
+        if (roleAdmin == null)
+        {
+            roleAdmin = new Infrastructure.Entities.Role
+            {
+                Id = Guid.NewGuid(), Code = "Admin", Label = "Admin",
+                CreatedAt = DateTimeOffset.UtcNow, UpdatedAt = DateTimeOffset.UtcNow
+            };
+            _db.Roles.Add(roleAdmin);
+            await _db.SaveChangesAsync();
+        }
+        var existing = await _db.UserSystemRoles.FirstOrDefaultAsync(x => x.UserId == id && x.RoleId == roleAdmin.Id);
+        if (roleCode == "Admin")
+        {
+            if (existing == null)
+            {
+                _db.UserSystemRoles.Add(new Infrastructure.Entities.UserSystemRole
+                {
+                    UserId = id,
+                    RoleId = roleAdmin.Id,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    UpdatedAt = DateTimeOffset.UtcNow,
+                    CreatedBy = id,
+                    UpdatedBy = id
+                });
+                await _db.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            if (existing != null)
+            {
+                _db.UserSystemRoles.Remove(existing);
+                await _db.SaveChangesAsync();
+            }
+        }
+        return Ok();
     }
 
     [HttpDelete("{id}")]

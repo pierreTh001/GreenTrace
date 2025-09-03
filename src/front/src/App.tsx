@@ -16,6 +16,7 @@ import Settings from './pages/Settings'
 import ReportPreview from './pages/ReportPreview'
 import ComplianceChecklist from './pages/ComplianceChecklist'
 import AuditTrail from './pages/AuditTrail'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -31,7 +32,8 @@ export default function App() {
           <Route path="/app/data" element={<DataCollection />} />
           <Route path="/app/emissions" element={<Emissions />} />
           <Route path="/app/report" element={<ReportPreview />} />
-          <Route path="/app/users" element={<Users />} />
+          {/** Obsolete: Users page replaced by Administration */}
+          <Route path="/app/admin" element={<Admin />} />
           <Route path="/app/settings" element={<Settings />} />
           <Route path="/app/compliance" element={<ComplianceChecklist />} />
           <Route path="/app/audit" element={<AuditTrail />} />

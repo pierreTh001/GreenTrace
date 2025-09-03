@@ -28,7 +28,8 @@ export default function Shell() {
     { to: '/app/data', label: 'Collecte des données', icon: BarChart3 },
     { to: '/app/emissions', label: 'Bilans GES (S1/S2/S3)', icon: CheckCircle },
     { to: '/app/report', label: 'Rapport CSRD', icon: FileText },
-    { to: '/app/users', label: 'Utilisateurs', icon: Users, admin: true },
+    // { to: '/app/users', label: 'Utilisateurs', icon: Users, admin: true }, // obsolete: replaced by Administration
+    { to: '/app/admin', label: 'Administration', icon: Settings, admin: true },
     { to: '/app/compliance', label: 'Conformité', icon: CheckCircle },
     { to: '/app/audit', label: 'Journal', icon: FileText }
   ]
