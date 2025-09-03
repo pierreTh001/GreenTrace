@@ -12,4 +12,7 @@ public interface IUserService
     Task DeleteAsync(Guid id);
     Task ActivateAsync(Guid id);
     Task UpdatePreferencesAsync(Guid id, object preferences);
+    Task<bool> ChangePasswordAsync(Guid id, string oldPassword, string newPassword);
+    Task MarkForDeletionAsync(Guid id, DateTimeOffset when);
+    Task ReactivateAsync(Guid id);
 }

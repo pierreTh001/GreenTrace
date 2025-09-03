@@ -143,6 +143,36 @@ public class UserService : IUserService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<bool> ChangePasswordAsync(Guid id, string oldPassword, string newPassword)
+    {
+        var user = await _db.Users.FindAsync(id);
+        if (user == null) return false;
+        if (!VerifyPassword(oldPassword, user.PasswordHash)) return false;
+        user.PasswordHash = HashPassword(newPassword);
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task MarkForDeletionAsync(Guid id, DateTimeOffset when)
+    {
+        var user = await _db.Users.FindAsync(id) ?? throw new KeyNotFoundException();
+        user.DeletedAt = when;
+        user.UpdatedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync();
+    }
+
+    public async Task ReactivateAsync(Guid id)
+    {
+        var user = await _db.Users.FindAsync(id) ?? throw new KeyNotFoundException();
+        if (user.DeletedAt != null)
+        {
+            user.DeletedAt = null;
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+            await _db.SaveChangesAsync();
+        }
+    }
+
     private async Task EnsureRoleExists(string code)
     {
         if (!await _db.Roles.AnyAsync(r => r.Code == code))

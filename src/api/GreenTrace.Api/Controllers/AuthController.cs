@@ -86,4 +86,20 @@ public class AuthController : ControllerBase
     public record LoginRequest(string Email, string Password);
     public record TokenRequest(string Token);
     public record ResetPasswordRequest(string Email);
+
+    public record ChangePasswordRequest(string OldPassword, string NewPassword);
+
+    [HttpPost("change-password")]
+    [Authorize]
+    [SwaggerOperation(Summary = "Change le mot de passe",
+        Description = "Vérifie l'ancien mot de passe et met à jour avec le nouveau.")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest req)
+    {
+        var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (uidStr == null) return Unauthorized();
+        if (!Guid.TryParse(uidStr.Value, out var userId)) return Unauthorized();
+        var ok = await _users.ChangePasswordAsync(userId, req.OldPassword, req.NewPassword);
+        if (!ok) return BadRequest("Ancien mot de passe invalide");
+        return Ok();
+    }
 }

@@ -1,16 +1,30 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { SubscriptionsService } from '../services/SubscriptionsService'
 import { EmissionsService } from '../services/EmissionsService'
 import { CompanyService } from '../services/CompanyService'
 
 export default function Dashboard() {
   const totals = EmissionsService.totals()
   const company = CompanyService.get()
+  const [hasSub, setHasSub] = useState<boolean>(false)
+  useEffect(() => { SubscriptionsService.me().then(s=>setHasSub(!!s)).catch(()=>setHasSub(false)) }, [])
 
   const items = [
     { title: 'Complétion fiche entreprise', value: `${Math.min(100, Math.round((['name','sector','employees','revenue','headquarters'].filter(k => (company as any)[k]) .length/5)*100))}%` },
     { title: 'Total GES', value: `${totals.total.toFixed(1)} tCO₂e` },
     { title: 'Matérialité active', value: 'ESRS E1, E5, S1, S4, G1' },
   ]
+
+  if (!hasSub) {
+    return (
+      <div className="max-w-2xl">
+        <h1 className="text-2xl font-semibold mb-2">Bienvenue sur GreenTrace</h1>
+        <p className="text-slate-600 mb-4">Pour utiliser l’application, vous devez souscrire à une offre.</p>
+        <Link to="/app/settings" className="btn btn-primary">Gérer mon abonnement</Link>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

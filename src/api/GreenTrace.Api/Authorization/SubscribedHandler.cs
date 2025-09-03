@@ -21,7 +21,7 @@ public class SubscribedHandler(ISubscriptionService subscriptions) : Authorizati
         if (subClaim == null) return;
         if (!Guid.TryParse(subClaim.Value, out var userId)) return;
 
-        if (await _subs.HasActiveAsync(userId))
+        if (await _subs.HasActiveAsync(userId) || await _subs.HasValidThroughAsync(userId))
         {
             context.Succeed(requirement);
         }

@@ -9,6 +9,7 @@ using GreenTrace.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using GreenTrace.Api.ViewModels.Companies;
 using GreenTrace.Api.ViewModels.Reports;
+using GreenTrace.Api.Services;
 
 namespace GreenTrace.Api.Controllers;
 
@@ -18,11 +19,13 @@ public class UsersController : ControllerBase
 {
     private readonly IUserService _users;
     private readonly AppDbContext _db;
+    private readonly ISubscriptionService _subs;
 
-    public UsersController(IUserService users, AppDbContext db)
+    public UsersController(IUserService users, AppDbContext db, ISubscriptionService subs)
     {
         _users = users;
         _db = db;
+        _subs = subs;
     }
 
     [HttpGet]
@@ -122,6 +125,33 @@ public class UsersController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("me")]
+    [Authorize]
+    [SwaggerOperation(Summary = "Supprime mon compte",
+        Description = "Supprime immédiatement s'il n'y a pas d'abonnement en cours. Sinon, annule le renouvellement et planifie la suppression à l'échéance d'engagement.")]
+    public async Task<IActionResult> DeleteMe()
+    {
+        var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (uidStr == null) return Unauthorized();
+        if (!Guid.TryParse(uidStr.Value, out var userId)) return Unauthorized();
+
+        var current = await _subs.GetCurrentAsync(userId);
+        if (current == null)
+        {
+            await _users.DeleteAsync(userId);
+            return NoContent();
+        }
+
+        // Cancel if needed and set deletion at engagement end
+        if (current.Status == "Active" || current.EndsAt == null)
+        {
+            current = await _subs.CancelAsync(userId);
+        }
+        if (current?.EndsAt == null) return Ok(new { scheduledDeletionAt = (DateTimeOffset?)null });
+        await _users.MarkForDeletionAsync(userId, current.EndsAt.Value);
+        return Ok(new { scheduledDeletionAt = current.EndsAt });
+    }
+
     [HttpPost("{id}/activate")]
     [Authorize(Roles = "Admin")]
     [SwaggerOperation(Summary = "Active un utilisateur",
@@ -139,6 +169,45 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdatePreferences(Guid id, object preferences)
     {
         await _users.UpdatePreferencesAsync(id, preferences);
+        return Ok();
+    }
+    [HttpGet("me")]
+    [Authorize]
+    [SwaggerOperation(Summary = "Mon profil",
+        Description = "Retourne les informations du profil de l’utilisateur connecté.")]
+    public async Task<IActionResult> Me()
+    {
+        var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (uidStr == null) return Unauthorized();
+        if (!Guid.TryParse(uidStr.Value, out var userId)) return Unauthorized();
+        var u = await _users.GetByIdAsync(userId);
+        if (u == null) return NotFound();
+        return Ok(new { id = u.Id, email = u.Email, firstName = u.FirstName, lastName = u.LastName, deletedAt = u.DeletedAt });
+    }
+
+    [HttpPut("me")]
+    [Authorize]
+    [SwaggerOperation(Summary = "Met à jour mon profil",
+        Description = "Met à jour prénom et nom pour l’utilisateur connecté.")]
+    public async Task<IActionResult> UpdateMe(UpdateUserViewModel req)
+    {
+        var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (uidStr == null) return Unauthorized();
+        if (!Guid.TryParse(uidStr.Value, out var userId)) return Unauthorized();
+        var u = await _users.UpdateAsync(userId, req.FirstName, req.LastName);
+        return Ok(new { id = u.Id, email = u.Email, firstName = u.FirstName, lastName = u.LastName, deletedAt = u.DeletedAt });
+    }
+
+    [HttpPost("me/reactivate")]
+    [Authorize]
+    [SwaggerOperation(Summary = "Réactive le compte",
+        Description = "Supprime le marquage de suppression différée sur le compte utilisateur.")]
+    public async Task<IActionResult> ReactivateMe()
+    {
+        var uidStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) ?? User.FindFirst("sub");
+        if (uidStr == null) return Unauthorized();
+        if (!Guid.TryParse(uidStr.Value, out var userId)) return Unauthorized();
+        await _users.ReactivateAsync(userId);
         return Ok();
     }
 }

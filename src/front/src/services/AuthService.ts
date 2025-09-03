@@ -21,17 +21,16 @@ function setToken(token: string | null) {
   else localStorage.removeItem(TOKEN)
 }
 
-async function ensureSubscribed() {
-  // Try to subscribe to BASIC if no active subscription
+function decodeJwt(token: string): any | null {
   try {
-    const me = await ApiClient.get<any>('/api/subscriptions/me')
-    if (!me) {
-      const plans = await ApiClient.get<any[]>('/api/subscriptions/plans')
-      const basic = plans.find(p => p.code === 'BASIC') || plans[0]
-      if (basic) await ApiClient.post<any>('/api/subscriptions/subscribe', { planId: basic.id })
-    }
-  } catch {}
+    const payload = token.split('.')?.[1]
+    if (!payload) return null
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+    return JSON.parse(decodeURIComponent(escape(json)))
+  } catch { return null }
 }
+
+// No auto-subscription; users start without a plan
 
 export const AuthService = {
   subscribe(cb: (u: User | null) => void) {
@@ -45,10 +44,13 @@ export const AuthService = {
     try {
       const res = await ApiClient.post<{ token: string }>('/api/auth/login', { email, password })
       setToken(res.token)
-      setCurrent({ id: 'me', email, role: 'User' })
+      const payload = decodeJwt(res.token)
+      const roles: string[] = Array.isArray(payload?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]) ? payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] : []
+      const role: 'Admin'|'User' = roles.includes('Admin') ? 'Admin' : 'User'
+      const id: string = payload?.sub || 'me'
+      setCurrent({ id, email, role })
       AuditService.log(email, 'Connexion')
-      // Lancer l'initialisation en arrière-plan pour ne pas bloquer la connexion
-      ensureSubscribed().catch(()=>{})
+      // Init (may be limited by subscription policies)
       CompanyService.bootstrapFromApi().catch(()=>{})
       return true
     } catch {
@@ -59,10 +61,13 @@ export const AuthService = {
     try {
       const res = await ApiClient.post<{ token: string }>('/api/auth/register', { email, password, firstName, lastName })
       setToken(res.token)
-      setCurrent({ id: 'me', email, role: 'User' })
+      const payload = decodeJwt(res.token)
+      const roles: string[] = Array.isArray(payload?.["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]) ? payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] : []
+      const role: 'Admin'|'User' = roles.includes('Admin') ? 'Admin' : 'User'
+      const id: string = payload?.sub || 'me'
+      setCurrent({ id, email, role })
       AuditService.log(email, 'Inscription')
-      // Ne bloque pas la réussite d'inscription si l'init échoue
-      ensureSubscribed().catch(()=>{})
+      // Init (may be limited by subscription policies)
       CompanyService.bootstrapFromApi().catch(()=>{})
       return true
     } catch {

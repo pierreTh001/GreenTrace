@@ -71,17 +71,7 @@ async function createCompany(payload: LocalCompany): Promise<any> {
   })
 }
 
-async function ensureActiveSubscription() {
-  try {
-    const me = await ApiClient.get<any>('/api/subscriptions/me')
-    if (me) return
-    const plans = await ApiClient.get<any[]>('/api/subscriptions/plans')
-    const basic = plans.find(p => p.code === 'BASIC') || plans[0]
-    if (basic) await ApiClient.post('/api/subscriptions/subscribe', { planId: basic.id })
-  } catch {
-    // ignore; API will enforce policy if missing
-  }
-}
+// No auto-subscription here; API policy "Subscribed" protects company endpoints
 
 async function updateCompany(id: string, patch: Partial<LocalCompany>) {
   return await ApiClient.put<any>(`/api/companies/${id}`, {
@@ -173,8 +163,7 @@ export const CompanyService = {
       } catch (e:any) {
         const msg = String(e?.message || e || '')
         if (msg.startsWith('404') || msg.startsWith('403')) {
-          // Company not found on server → create anew
-          await ensureActiveSubscription()
+          // Company not found or forbidden (no subscription) → attempt creation will still be blocked by API if needed
           const payload: LocalCompany = {
             name: patch.name ?? db.company.name,
             legalForm: patch.legalForm ?? db.company.legalForm,
@@ -202,8 +191,7 @@ export const CompanyService = {
         throw e
       }
     } else {
-      // Création de l'entreprise si aucune n'existe encore
-      await ensureActiveSubscription()
+      // Création de l'entreprise si aucune n'existe encore (API peut refuser si non abonné)
       const payload: LocalCompany = {
         name: patch.name ?? db.company.name,
         legalForm: patch.legalForm ?? db.company.legalForm,
